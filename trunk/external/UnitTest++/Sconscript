@@ -1,0 +1,9 @@
+Import('*')
+
+LIB = env.StaticLibrary
+
+sources = Glob('*.cpp') + Glob('Win32\\*.cpp')
+
+UnitTestPlusPlus = LIB('UnitTestPlusPlus', sources)
+
+Return( 'UnitTestPlusPlus' )
