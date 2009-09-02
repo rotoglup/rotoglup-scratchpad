@@ -1,0 +1,9 @@
+Import('*')
+
+env.Append(CPPPATH = ["M:\\external"])
+
+LIB = env.StaticLibrary
+
+image_io = LIB('image_io', Glob('*.cpp') + [ "M:\\bin\\vc8\\lib\\FreeImage.lib" ])
+
+Return( 'image_io' )
