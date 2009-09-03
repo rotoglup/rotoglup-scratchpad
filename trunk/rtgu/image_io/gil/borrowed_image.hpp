@@ -70,6 +70,13 @@ public:
     ~borrowed_image() {
     }
 
+    void reconstruct(const point_t& dimensions, Pixel* pixels_base, std::size_t row_size_in_memunits, bool upside_down, const memory_holder_t& memory_holder) {
+        initialize_memory(dimensions, pixels_base, row_size_in_memunits, upside_down, memory_holder);
+    }
+    void reconstruct(x_coord_t width, y_coord_t height, Pixel* pixels_base, std::size_t row_size_in_memunits, bool upside_down, const memory_holder_t& memory_holder) {
+        initialize_memory(point_t(width,height), pixels_base, row_size_in_memunits, upside_down, memory_holder);
+    }
+
     void swap(borrowed_image& img) { // required by MutableContainerConcept
         using std::swap;
         swap(_memory_holder,  img._memory_holder);
@@ -77,8 +84,9 @@ public:
     }    
 
     view_t       _view;      // contains pointer to the pixels, the borrowed_image size and ways to navigate pixels
-private:
     memory_holder_t _memory_holder;
+
+private:
 
     void initialize_memory(const point_t& dimensions, Pixel* pixels_base, std::size_t row_size_in_memunits, bool upside_down, const boost::shared_ptr<void>& memory_holder) { 
       _memory_holder = memory_holder;
@@ -93,6 +101,10 @@ private:
       }
     }
 };
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+// from boost/gil/image.hpp
 
 template <typename Pixel>
 void swap(borrowed_image<Pixel>& im1,borrowed_image<Pixel>& im2) {
