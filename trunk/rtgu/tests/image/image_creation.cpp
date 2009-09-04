@@ -49,7 +49,8 @@ TEST_FIXTURE(DefaultValues, CreateCompatibleImage)
 
   img::any_image source_image( real_source_image );
 
-  img::any_image compatible_image = img::create_compatible_image( source_image, 128, 128 );
+  img::any_image compatible_image;
+  img::create_compatible_image( source_image, 128, 128, compatible_image );
   
   CHECK( check_identical_pixel_types(source_image, compatible_image) );
 

@@ -1,8 +1,11 @@
 #ifndef RTGU_IMAGE_IMAGE_HPP
 #define RTGU_IMAGE_IMAGE_HPP
 
-#include <boost/gil/gil_all.hpp>
-#include <boost/gil/extension/dynamic_image/dynamic_image_all.hpp>
+#include <boost/gil/pixel.hpp>
+#include <boost/gil/image.hpp>
+#include <boost/gil/typedefs.hpp>
+#include <boost/gil/extension/dynamic_image/any_image.hpp>
+#include <boost/gil/extension/dynamic_image/apply_operation.hpp>
 
 #include "detail/image_allocator.hpp"
 
@@ -41,7 +44,7 @@ namespace rtgu { namespace image {
 
   //
 
-  any_image create_compatible_image(any_image const& base_image, int width, int height);
+  inline void create_compatible_image(any_image const& base_image, int width, int height, any_image& result);
 
   //
 
@@ -79,20 +82,21 @@ namespace rtgu { namespace image {
 
     struct any_image_create_compatible
     {
-      typedef any_image result_type;
+      typedef void result_type;
 
       int width_, height_;
+      any_image& result_;
 
-      any_image_create_compatible(int width, int height) : width_(width), height_(height) {}
+      any_image_create_compatible(int width, int height, any_image& result) : width_(width), height_(height), result_(result) {}
 
-      template <typename Image> result_type operator()(Image const& img) const { return result_type( Image(width_, height_) ); }
+      template <typename Image> result_type operator()(Image const& img) const { result_ = any_image(Image()); result_.recreate(width_, height_); }
     };
   
   }
 
-  any_image create_compatible_image(any_image const& base_image, int width, int height)
+  void create_compatible_image(any_image const& base_image, int width, int height, any_image& result)
   {
-    return apply_operation(base_image, detail::any_image_create_compatible(width, height));
+    return apply_operation(base_image, detail::any_image_create_compatible(width, height, result));
   }
 
 } }
