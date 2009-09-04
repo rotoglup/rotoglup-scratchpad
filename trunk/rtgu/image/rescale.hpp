@@ -9,9 +9,25 @@
 
 namespace boost { namespace gil {
 
-  namespace detail {
+  // horizontal rescale only, rescale src view into dst view, matching dst view width
+  template <typename SrcView, typename DstView, typename Filter>
+  inline void rescale_cols(const SrcView& src, const DstView& dst, const Filter& filter);
 
-    class weight_table;
+  // vertical rescale only, rescale src view into dst view, matching dst view height
+  template <typename SrcView, typename DstView, typename Filter>
+  inline void rescale_rows(const SrcView& src, const DstView& dst, const Filter& filter);
+
+  // rescale src view into dst view, matching dst view dimensions
+  template <typename SrcView, typename DstView, typename Filter>
+  inline void rescale(const SrcView& src, const DstView& dst, const Filter& filter);
+
+} }
+
+//----------------------------------------------------------------------------
+
+namespace boost { namespace gil {
+
+  namespace detail {
 
     //----------------------------------------------------------------------------
 
@@ -129,21 +145,6 @@ namespace boost { namespace gil {
 
   //----------------------------------------------------------------------------
 
-  // horizontal rescale only, rescale src view into dst view, matching dst view width
-  template <typename SrcView, typename DstView, typename Filter>
-  inline void rescale_cols(const SrcView& src, const DstView& dst, const Filter& filter);
-
-  // vertical rescale only, rescale src view into dst view, matching dst view height
-  template <typename SrcView, typename DstView, typename Filter>
-  inline void rescale_rows(const SrcView& src, const DstView& dst, const Filter& filter);
-
-  // rescale src view into dst view, matching dst view dimensions
-  template <typename SrcView, typename DstView, typename Filter>
-  inline void rescale(const SrcView& src, const DstView& dst, const Filter& filter);
-
-  template <typename ViewTypes, typename Filter>
-  inline void rescale_any(any_image_view<ViewTypes>& src, any_image_view<ViewTypes>& dst, const Filter& filter);
-
 } }
 
 //----------------------------------------------------------------------------
@@ -179,6 +180,8 @@ inline void boost::gil::rescale_cols(const SrcView& src, const DstView& dst, con
   }
 }
 
+//----------------------------------------------------------------------------
+
 template <typename SrcView, typename DstView, typename Filter>
 inline void boost::gil::rescale_rows(const SrcView& src, const DstView& dst, const Filter& filter)
 {
@@ -209,6 +212,8 @@ inline void boost::gil::rescale_rows(const SrcView& src, const DstView& dst, con
       );
   }
 }
+
+//----------------------------------------------------------------------------
 
 template <typename SrcView, typename DstView, typename Filter>
 inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const Filter& filter)
@@ -262,5 +267,7 @@ inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const Fi
       );
   }
 }
+
+//----------------------------------------------------------------------------
 
 #endif
