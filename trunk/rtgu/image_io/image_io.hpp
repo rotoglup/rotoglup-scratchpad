@@ -73,6 +73,7 @@ namespace rtgu { namespace image_io {
 
   /// throws io_exception
   inline void write_image(char const* filename, any_image const& image);
+  // TODO add a write_image that takes a templated image
 
   /// throws io_exception, unsupported_format_exception
   template <class View> void write_view(View const& view)
