@@ -1,7 +1,6 @@
-#ifndef RTGU_IMAGE_RESIZE_HPP
-#define RTGU_IMAGE_RESIZE_HPP
+#ifndef RTGU_IMAGE_RESCALE_HPP
+#define RTGU_IMAGE_RESCALE_HPP
 
-#include <boost/gil/extension/dynamic_image/any_image_view.hpp>
 #include <boost/gil/extension/numeric/algorithm.hpp>
 #include <boost/gil/extension/numeric/pixel_numeric_operations.hpp>
 #include "filter_weight_table.hpp"
@@ -262,32 +261,6 @@ inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const Fi
       , htable_end
       );
   }
-}
-
-namespace boost { namespace gil { namespace detail
-{
-  template <typename Views, typename Filter>
-  struct rescale_obj
-  {
-    typedef void result_type;        // required typedef
-    
-    any_image_view<Views>& _dst_view;
-    const Filter& _filter;
-
-    rescale_obj(any_image_view<Views>& dst_view, const Filter& filter) : _dst_view(dst_view), _filter(filter) {}
-
-    template <typename SrcView> 
-    void operator()(SrcView& src) const
-    { 
-      return rescale( src, _dst_view._dynamic_cast<SrcView>(), _filter );
-    }
-  };
-} } }
-
-template <typename ViewTypes, typename Filter>
-inline void boost::gil::rescale_any(any_image_view<ViewTypes>& src, any_image_view<ViewTypes>& dst, const Filter& filter)
-{
-  apply_operation( src, detail::rescale_obj<ViewTypes, Filter>(dst, filter) );
 }
 
 #endif
