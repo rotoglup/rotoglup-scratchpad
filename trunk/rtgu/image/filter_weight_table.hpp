@@ -64,68 +64,68 @@ namespace detail
 } }   // namespace boost::gil
 
 template <typename Filter>
-void boost::gil::detail::weight_table::reset(Filter const& filter, unsigned uSrcSize, unsigned uDstSize)
+void boost::gil::detail::weight_table::reset(Filter const& filter, unsigned src_size, unsigned dst_size)
 {
-  float const dFilterWidth = static_cast<float>( filter.width() );
+  float const filter_width = static_cast<float>( filter.width() );
 
   // scale factor from source to destination
-  float const dScale = static_cast<float>(uDstSize) / static_cast<float>(uSrcSize);
+  float const scale_factor = static_cast<float>(dst_size) / static_cast<float>(src_size);
 
-  float dWidth, dFScale;
+  float sample_width, filter_scale_factor;
 
-  if (dScale < 1.0)
+  if (scale_factor < 1.0)
   {
     // minification
-    dWidth  = dFilterWidth / dScale; 
-    dFScale = dScale; 
+    sample_width  = filter_width / scale_factor; 
+    filter_scale_factor = scale_factor; 
   }
   else
   {
     // magnification
-    dWidth  = dFilterWidth;
-    dFScale = 1.0f;
+    sample_width  = filter_width;
+    filter_scale_factor = 1.0f;
   }
 
   // window size is the number of sampled source pixels per destination pixel
-  _window_size = 2 * static_cast<int>( ceil(dWidth) ) + 1; 
+  _window_size = 2 * static_cast<int>( ceil(sample_width) ) + 1; 
 
   // allocate list of contributions 
-  _contribution_table.resize( uDstSize );
+  _contribution_table.resize( dst_size );
 
   // allocate vector for every needed weight factor
-  _weights_storage.resize( uDstSize * _window_size );
+  _weights_storage.resize( dst_size * _window_size );
 
   // offset for discrete to continuous coordinate conversion
-  float dOffset = (0.5f / dScale) - 0.5f;
+  float const scale_offset = (0.5f / scale_factor) - 0.5f;
 
   // scan through line of contributions
 
-  for (unsigned u = 0; u < uDstSize; u++)
+  for (unsigned u = 0; u < dst_size; u++)
   {
-    float dCenter = static_cast<float>(u) / dScale + dOffset;   // reverse mapping to source coordinates
+    float const sample_center = static_cast<float>(u) / scale_factor + scale_offset;   // reverse mapping to source coordinates
 
     // find the significant edge points that affect the pixel
 
-    int iLeft  = static_cast<int>( floor(dCenter - dWidth) );
-    int iRight = static_cast<int>(  ceil(dCenter + dWidth) );
+    int sample_begin = static_cast<int>( floor(sample_center - sample_width) );
+    int sample_end   = static_cast<int>(  ceil(sample_center + sample_width) );
 
     // clamp edge points to borders
     // FIXME could handle wrapping of image here
 
-    iLeft  = std::max( iLeft, 0 );
-    iRight = std::min( iRight, static_cast<int>(uSrcSize) - 1 );
+    sample_begin = std::max( sample_begin, 0 );
+    sample_end   = std::min( sample_end, static_cast<int>(src_size) - 1 );
     
     // cut edge points to fit in filter window in case of spill-off due to rounding
 
-    if ((iRight - iLeft + 1) > static_cast<int>(_window_size))
+    if ((sample_end - sample_begin + 1) > static_cast<int>(_window_size))
     {
-      if (iLeft < (int(uSrcSize) - 1 / 2)) // FIXME missing () ?
+      if (sample_begin < ((int(src_size) - 1) / 2)) // FIXME missing () ?
       {    
-        iLeft++;
+        sample_begin++;
       }
       else
       {
-        iRight--; 
+        sample_end--; 
       }
     }
 
@@ -136,11 +136,11 @@ void boost::gil::detail::weight_table::reset(Filter const& filter, unsigned uSrc
 
     float total_weight = 0.f;  // zero sum of weights
 
-    for (int srcx = iLeft; srcx <= iRight; srcx++)
+    for (int srcx = sample_begin; srcx <= sample_end; srcx++)
     {
-      float x = dFScale * (dCenter - static_cast<float>(srcx));
+      float x = filter_scale_factor * (sample_center - static_cast<float>(srcx));
       float filter_value = filter.filter(x);
-      float weight = dFScale * filter_value;
+      float weight = filter_scale_factor * filter_value;
       
       total_weight += weight;
 
@@ -153,25 +153,25 @@ void boost::gil::detail::weight_table::reset(Filter const& filter, unsigned uSrc
     {
       float* weight_storage = weight_base_pointer;
 
-      for (int iSrc = iLeft; iSrc <= iRight; iSrc++)
+      for (int srcx = sample_begin; srcx <= sample_end; srcx++)
       {
         *weight_storage++ /= total_weight; 
       }
       
       // simplify the filter, discarding null weights at the right
 
-      int weight_index = iRight - iLeft;
+      int weight_index = sample_end - sample_begin;
       while (weight_index > 0 && weight_base_pointer[weight_index] == 0.f)
       {
-        iRight--;
+        sample_end--;
         weight_index--;
       }
     }
 
     // store contribution for current pixel
 
-    _contribution_table[u].left    = iLeft; 
-    _contribution_table[u].right   = iRight;
+    _contribution_table[u].left    = sample_begin; 
+    _contribution_table[u].right   = sample_end;
     _contribution_table[u].weights = weight_base_pointer;
   } 
 }
