@@ -9,6 +9,7 @@
 #include <rtgu/image/filters.hpp>
 #include <rtgu/image/rescale.hpp>
 #include <rtgu/image/rescale_any_view.hpp>
+#include <rtgu/image/rescale_virtual_view.hpp>
 
 #include "test_helpers.hpp"
 
@@ -133,6 +134,72 @@ TEST_FIXTURE(DefaultValues, RescaleImage)
   gil::rescale_any_view( view(result), view(bigger_image), filter );
 
   imgio::write_image("data\\test_bilinear.exr", bigger_image);
+}
+
+TEST_FIXTURE(DefaultValues, RescaleVirtualViewX)
+{
+  typedef gil::rgba32f_pixel_t pixel_t;
+  typedef imgio::image_rgba32f image_t;
+
+  //DebugBreak();
+
+  imgio::any_image result = imgio::read_image("data\\test_fregate.exr");
+
+  image_t& source = result._dynamic_cast<image_t>();
+
+  image_t other_image;
+  imgio::create_image( other_image, source.width() / 2, source.height() );
+
+  //gil::catmull_rom_filter filter;
+  gil::bilinear_filter filter;
+
+  gil::copy_pixels( rescale_x_view(view(source), other_image.width(), filter), view(other_image) );
+
+  imgio::write_image("data\\test_bilinear_x.exr", imgio::any_image(other_image) );
+}
+
+TEST_FIXTURE(DefaultValues, RescaleVirtualViewY)
+{
+  typedef gil::rgba32f_pixel_t pixel_t;
+  typedef imgio::image_rgba32f image_t;
+
+  //DebugBreak();
+
+  imgio::any_image result = imgio::read_image("data\\test_fregate.exr");
+
+  image_t& source = result._dynamic_cast<image_t>();
+
+  image_t other_image;
+  imgio::create_image( other_image, source.width(), source.height() / 2 );
+
+  //gil::catmull_rom_filter filter;
+  gil::bilinear_filter filter;
+
+  gil::copy_pixels( rescale_y_view(view(source), other_image.height(), filter), view(other_image) );
+
+  imgio::write_image("data\\test_bilinear_y.exr", imgio::any_image(other_image) );
+}
+
+TEST_FIXTURE(DefaultValues, RescaleVirtualViewXY)
+{
+  typedef gil::rgba32f_pixel_t pixel_t;
+  typedef imgio::image_rgba32f image_t;
+
+  //DebugBreak();
+
+  imgio::any_image result = imgio::read_image("data\\test_fregate.exr");
+
+  image_t& source = result._dynamic_cast<image_t>();
+
+  image_t other_image;
+  imgio::create_image( other_image, source.width() / 2, source.height() / 2 );
+
+  //gil::catmull_rom_filter filter;
+  gil::bilinear_filter filter;
+
+  gil::copy_pixels( rescale_view(view(source), other_image.width(), other_image.height(), filter), view(other_image) );
+
+  imgio::write_image("data\\test_bilinear_xy.exr", imgio::any_image(other_image) );
 }
 
 //----------------------------------------------------------------------------
