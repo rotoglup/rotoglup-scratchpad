@@ -1,8 +1,9 @@
 #ifndef RTGU_IMAGE_RESCALE_HPP
 #define RTGU_IMAGE_RESCALE_HPP
 
-#include <boost/gil/extension/numeric/algorithm.hpp>
+#include <stdexcept>
 #include <boost/gil/extension/numeric/pixel_numeric_operations.hpp>
+#include <boost/gil/extension/numeric/algorithm.hpp>
 #include "filter_weight_table.hpp"
 
 //----------------------------------------------------------------------------
@@ -31,13 +32,13 @@ namespace boost { namespace gil {
 
     //----------------------------------------------------------------------------
 
-    struct clamp_channel_fn 
+    struct clamp_channel_fn
     {
         template <typename SrcChannel, typename DstChannel>
         void operator()(const SrcChannel& src, DstChannel& dst) {
             typedef typename channel_traits<DstChannel>::value_type dst_value_t;
             typedef typename channel_traits<SrcChannel>::value_type src_value_t;
-            dst = dst_value_t( 
+            dst = dst_value_t(
                     std::min(
                         src_value_t(channel_traits<DstChannel>::max_value())
                       , std::max(
@@ -114,7 +115,7 @@ namespace boost { namespace gil {
 
       AccumulatorPixelType zero_pixel;
       zero_channels(zero_pixel);
-      
+
       ContribIterator contrib_it = contrib_begin;
       DstIterator dst_it = dst_begin;
 
@@ -124,7 +125,7 @@ namespace boost { namespace gil {
         // iterator range on source pixels contributing to current destination pixel
         SrcIterator const src_pixels_begin = src_begin + contrib_it->left;
         SrcIterator const src_pixels_end   = src_begin + (contrib_it->right+1);
-        
+
         // for every weight: accum += src_pixel * weight
         AccumulatorPixelType accum = std::inner_product(
             src_pixels_begin, src_pixels_end
@@ -153,7 +154,7 @@ template <typename SrcView, typename DstView, typename Filter>
 inline void boost::gil::rescale_cols(const SrcView& src, const DstView& dst, const Filter& filter)
 {
   typedef typename SrcView::value_type src_pixel_t;
-  typedef gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
+  typedef typename gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
 
   if (src.height() != dst.height())
   {
@@ -186,7 +187,7 @@ template <typename SrcView, typename DstView, typename Filter>
 inline void boost::gil::rescale_rows(const SrcView& src, const DstView& dst, const Filter& filter)
 {
   typedef typename SrcView::value_type src_pixel_t;
-  typedef gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
+  typedef typename gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
 
   if (src.width() != dst.width())
   {
@@ -219,7 +220,7 @@ template <typename SrcView, typename DstView, typename Filter>
 inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const Filter& filter)
 {
   typedef typename SrcView::value_type src_pixel_t;
-  typedef gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
+  typedef typename gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
 
   // construct weights tables
 

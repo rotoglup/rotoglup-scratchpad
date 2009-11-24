@@ -1,6 +1,7 @@
 #ifndef RTGU_IMAGE_IO_IMAGE_IO_HPP
 #define RTGU_IMAGE_IO_IMAGE_IO_HPP
 
+#include <stdexcept>
 #include <boost/gil/extension/dynamic_image/dynamic_image_all.hpp>
 
 #include <FreeImage/FreeImage.h>    // TODO remove from this header, used only for 'create_image'
@@ -8,7 +9,7 @@
 #include "gil/borrowed_image.hpp"
 
 #define RTGU_IMAGE_IO_DECLARE_IMAGE_TYPE(pixel_type_id) \
-  typedef gil::borrowed_image<gil::pixel_type_id##_pixel_t> image_##pixel_type_id;
+  typedef gil::borrowed_image<gil::pixel_type_id##_pixel_t> image_##pixel_type_id
 
 namespace rtgu { namespace image_io {
 
@@ -121,7 +122,7 @@ void rtgu::image_io::create_image(gil::borrowed_image<PixelType>& image, int wid
   typedef detail::pixel_descriptor_t<PixelType> pixel_descriptor;
 
   FIBITMAP* fi_image = FreeImage_AllocateT( static_cast<FREE_IMAGE_TYPE>(pixel_descriptor::image_type), width, height, pixel_descriptor::bit_count);
-  
+
   if (fi_image == NULL)
   {
     throw std::bad_alloc();
@@ -169,8 +170,8 @@ namespace rtgu { namespace image_io { namespace detail {
   struct get_FIBITMAP_op
   {
     typedef FIBITMAP* result_type;
-    
-    template <typename PixelType> 
+
+    template <typename PixelType>
     result_type operator()(gil::borrowed_image<PixelType> const& img)
     { return reinterpret_cast<FIBITMAP*>( img._memory_holder.get() ); }
   };

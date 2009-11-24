@@ -21,16 +21,17 @@ namespace boost { namespace gil { namespace detail
   struct rescale_obj
   {
     typedef void result_type;        // required typedef
-    
+
     any_image_view<Views>& _dst_view;
     const Filter& _filter;
 
     rescale_obj(any_image_view<Views>& dst_view, const Filter& filter) : _dst_view(dst_view), _filter(filter) {}
 
-    template <typename SrcView> 
+    template <typename SrcView>
     void operator()(SrcView& src) const
-    { 
-      return rescale( src, _dst_view._dynamic_cast<SrcView>(), _filter );
+    {
+      //return rescale( src, _dst_view._dynamic_cast<SrcView>(), _filter );
+      return rescale( src, _dst_view, _filter );
     }
   };
 } } }

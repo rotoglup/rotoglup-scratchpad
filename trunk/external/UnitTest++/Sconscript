@@ -1,8 +1,15 @@
 Import('*')
 
+platform = env['PLATFORM']
+
 LIB = env.StaticLibrary
 
-sources = Glob('*.cpp') + Glob('Win32\\*.cpp')
+sources = Glob('*.cpp')
+
+if platform == "darwin":
+  sources += Glob('Posix/*.cpp')
+else:
+  sources += Glob('Win32\\*.cpp')
 
 UnitTestPlusPlus = LIB('UnitTestPlusPlus', sources)
 

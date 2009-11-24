@@ -1,10 +1,10 @@
-#define NOMINMAX
-#include <windows.h>
+//#define NOMINMAX
+//#include <windows.h>
 
 #include "UnitTest++/UnitTest++.h"
 #include "UnitTest++/TestReporterStdout.h"
 
-#include <rtgu/image_io/image_io.hpp>
+//#include <rtgu/image_io/image_io.hpp>
 #include <rtgu/image/filter_weight_table.hpp>
 #include <rtgu/image/filters.hpp>
 #include <rtgu/image/rescale.hpp>
@@ -13,8 +13,7 @@
 
 #include "test_helpers.hpp"
 
-namespace gil = boost::gil;
-namespace imgio = rtgu::image_io;
+namespace bgil = boost::gil;
 
 struct DefaultValues
 {
@@ -30,14 +29,14 @@ struct DefaultValues
 
 TEST_FIXTURE(DefaultValues, WeightTable)
 {
-  gil::bilinear_filter filter;
+  bgil::bilinear_filter filter;
 
-  gil::detail::weight_table downsample_table;
+  bgil::detail::weight_table downsample_table;
   downsample_table.reset( filter, 1000, 500 );
 
   CHECK( downsample_table.window_size() > filter.width() );
 
-  gil::detail::weight_table upsample_table;
+  bgil::detail::weight_table upsample_table;
   upsample_table.reset( filter, 500, 1000 );
 
   CHECK( upsample_table.window_size() == 2 * filter.width() + 1 );
@@ -56,13 +55,13 @@ namespace {
     contrib_mockup() : left(0), right(N-1) {};
   };
 
-};
+}
 
 TEST_FIXTURE(DefaultValues, RescaleLine)
 {
-  typedef gil::bgra8_pixel_t   src_pixel_t;
-  typedef gil::rgba8_pixel_t   dst_pixel_t;
-  typedef gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
+  typedef bgil::bgra8_pixel_t   src_pixel_t;
+  typedef bgil::rgba8_pixel_t   dst_pixel_t;
+  typedef bgil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
 
   src_pixel_t src[2] = { src_pixel_t(32,64,128,255), src_pixel_t(32,64,128,255) };
   dst_pixel_t dst[1];
@@ -72,54 +71,57 @@ TEST_FIXTURE(DefaultValues, RescaleLine)
   contrib.weights[0] = 0.5f;
   contrib.weights[1] = 0.5f;
 
-  gil::detail::rescale_line<accum_pixel_t>( src, dst, &contrib, &contrib+1 );
+  bgil::detail::rescale_line<accum_pixel_t>( src, dst, &contrib, &contrib+1 );
 
   CHECK_EQUAL( dst_pixel_t(128,64,32,255), dst[0] );
 }
 
 TEST_FIXTURE(DefaultValues, RescaleLineDimensionMismatch)
 {
-  typedef gil::bgra8_pixel_t   src_pixel_t;
-  typedef gil::rgba8_pixel_t   dst_pixel_t;
+  typedef bgil::bgra8_pixel_t   src_pixel_t;
+  typedef bgil::rgba8_pixel_t   dst_pixel_t;
 
-  gil::bilinear_filter filter;
+  bgil::bilinear_filter filter;
 
   {
-    gil::image<src_pixel_t, false> src(3, 3);
-    gil::image<dst_pixel_t, false> dst(7, 7);
+    bgil::image<src_pixel_t, false> src(3, 3);
+    bgil::image<dst_pixel_t, false> dst(7, 7);
 
-    CHECK_THROW( gil::rescale_rows( gil::view(src), gil::view(dst), filter ), std::runtime_error );
+    CHECK_THROW( bgil::rescale_rows( bgil::view(src), bgil::view(dst), filter ), std::runtime_error );
 
-    CHECK_THROW( gil::rescale_cols( gil::view(src), gil::view(dst), filter ), std::runtime_error );
+    CHECK_THROW( bgil::rescale_cols( bgil::view(src), bgil::view(dst), filter ), std::runtime_error );
 
-    CHECK_NO_THROW( gil::rescale( gil::view(src), gil::view(dst), filter ) );
+    CHECK_NO_THROW( bgil::rescale( bgil::view(src), bgil::view(dst), filter ) );
   }
 }
 
 TEST_FIXTURE(DefaultValues, RescaleLineDimensionMatch)
 {
-  typedef gil::bgra8_pixel_t   src_pixel_t;
-  typedef gil::rgba8_pixel_t   dst_pixel_t;
+  typedef bgil::bgra8_pixel_t   src_pixel_t;
+  typedef bgil::rgba8_pixel_t   dst_pixel_t;
 
-  gil::bilinear_filter filter;
+  bgil::bilinear_filter filter;
 
   {
-    gil::image<src_pixel_t, false> src(3, 3);
-    gil::image<dst_pixel_t, false> dst(3, 7);
+    bgil::image<src_pixel_t, false> src(3, 3);
+    bgil::image<dst_pixel_t, false> dst(3, 7);
 
-    CHECK_NO_THROW( gil::rescale_rows( gil::view(src), gil::view(dst), filter ) );
+    CHECK_NO_THROW( bgil::rescale_rows( bgil::view(src), bgil::view(dst), filter ) );
   }
   {
-    gil::image<src_pixel_t, false> src(3, 3);
-    gil::image<dst_pixel_t, false> dst(7, 3);
+    bgil::image<src_pixel_t, false> src(3, 3);
+    bgil::image<dst_pixel_t, false> dst(7, 3);
 
-    CHECK_NO_THROW( gil::rescale_cols( gil::view(src), gil::view(dst), filter ) );
+    CHECK_NO_THROW( bgil::rescale_cols( bgil::view(src), bgil::view(dst), filter ) );
   }
 }
+/*
+
+namespace imgio = rtgu::image_io;
 
 TEST_FIXTURE(DefaultValues, RescaleImage)
 {
-  typedef gil::rgba32f_pixel_t pixel_t;
+  typedef bgil::rgba32f_pixel_t pixel_t;
   typedef imgio::image_rgba32f image_t;
 
   //DebugBreak();
@@ -128,17 +130,17 @@ TEST_FIXTURE(DefaultValues, RescaleImage)
 
   imgio::any_image bigger_image = imgio::create_compatible_image( result, result.width() / 4, result.height() / 4 );
 
-  //gil::catmull_rom_filter filter;
-  gil::bilinear_filter filter;
+  //bgil::catmull_rom_filter filter;
+  bgil::bilinear_filter filter;
 
-  gil::rescale_any_view( view(result), view(bigger_image), filter );
+  bgil::rescale_any_view( view(result), view(bigger_image), filter );
 
   imgio::write_image("data\\test_bilinear.exr", bigger_image);
 }
 
 TEST_FIXTURE(DefaultValues, RescaleVirtualViewX)
 {
-  typedef gil::rgba32f_pixel_t pixel_t;
+  typedef bgil::rgba32f_pixel_t pixel_t;
   typedef imgio::image_rgba32f image_t;
 
   //DebugBreak();
@@ -150,17 +152,17 @@ TEST_FIXTURE(DefaultValues, RescaleVirtualViewX)
   image_t other_image;
   imgio::create_image( other_image, source.width() / 2, source.height() );
 
-  //gil::catmull_rom_filter filter;
-  gil::bilinear_filter filter;
+  //bgil::catmull_rom_filter filter;
+  bgil::bilinear_filter filter;
 
-  gil::copy_pixels( rescale_x_view(view(source), other_image.width(), filter), view(other_image) );
+  bgil::copy_pixels( rescale_x_view(view(source), other_image.width(), filter), view(other_image) );
 
   imgio::write_image("data\\test_bilinear_x.exr", imgio::any_image(other_image) );
 }
 
 TEST_FIXTURE(DefaultValues, RescaleVirtualViewY)
 {
-  typedef gil::rgba32f_pixel_t pixel_t;
+  typedef bgil::rgba32f_pixel_t pixel_t;
   typedef imgio::image_rgba32f image_t;
 
   //DebugBreak();
@@ -172,17 +174,17 @@ TEST_FIXTURE(DefaultValues, RescaleVirtualViewY)
   image_t other_image;
   imgio::create_image( other_image, source.width(), source.height() / 2 );
 
-  //gil::catmull_rom_filter filter;
-  gil::bilinear_filter filter;
+  //bgil::catmull_rom_filter filter;
+  bgil::bilinear_filter filter;
 
-  gil::copy_pixels( rescale_y_view(view(source), other_image.height(), filter), view(other_image) );
+  bgil::copy_pixels( rescale_y_view(view(source), other_image.height(), filter), view(other_image) );
 
   imgio::write_image("data\\test_bilinear_y.exr", imgio::any_image(other_image) );
 }
 
 TEST_FIXTURE(DefaultValues, RescaleVirtualViewXY)
 {
-  typedef gil::rgba32f_pixel_t pixel_t;
+  typedef bgil::rgba32f_pixel_t pixel_t;
   typedef imgio::image_rgba32f image_t;
 
   //DebugBreak();
@@ -194,14 +196,14 @@ TEST_FIXTURE(DefaultValues, RescaleVirtualViewXY)
   image_t other_image;
   imgio::create_image( other_image, source.width() / 2, source.height() / 2 );
 
-  //gil::catmull_rom_filter filter;
-  gil::bilinear_filter filter;
+  //bgil::catmull_rom_filter filter;
+  bgil::bilinear_filter filter;
 
-  gil::copy_pixels( rescale_view(view(source), other_image.width(), other_image.height(), filter), view(other_image) );
+  bgil::copy_pixels( rescale_view(view(source), other_image.width(), other_image.height(), filter), view(other_image) );
 
   imgio::write_image("data\\test_bilinear_xy.exr", imgio::any_image(other_image) );
 }
-
+*/
 //----------------------------------------------------------------------------
 
 int main(int, char const *[])

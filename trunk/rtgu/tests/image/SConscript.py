@@ -6,10 +6,15 @@ GCC_PATH = 'F:\\temp\\MinGW\\bin\\gcc.exe'
 env = Environment(ENV = os.environ)
 
 compiler = env.subst('$CC')
-print compiler
+platform = env['PLATFORM']
+print compiler, platform
 
-env.Append(CPPPATH = ["M:\\boost_1_37\\include\\boost-1_37", "#..\\..\\..\\external", "#..\\..\\.."])
-env.Append(LIBPATH = ["M:\\boost_1_37\\lib"])
+if platform == "darwin":
+  env.Append(CPPPATH = ["/usr/local/boost_1_37_0", "#../../../external", "#../../.."])
+  env.Append(LIBPATH = [])
+else:
+  env.Append(CPPPATH = ["M:\\boost_1_37\\include\\boost-1_37", "#..\\..\\..\\external", "#..\\..\\.."])
+  env.Append(LIBPATH = ["M:\\boost_1_37\\lib"])
 
 #-------------------------------------------------------------------------------
 
@@ -39,11 +44,11 @@ elif compiler == 'gcc':
   #?#env.Append(CPPFLAGS = "-static-libgcc")
   
   OPTIMIZE_FLAGS  = "-O3 -ffast-math -msse -msse2 -mfpmath=sse -DNDEBUG "
-  OPTIMIZE_FLAGS += "-mtune=core2 "
+  # no avail on gcc 4.0.1 # OPTIMIZE_FLAGS += "-mtune=core2 "
   OPTIMIZE_FLAGS += "-fomit-frame-pointer "
   OPTIMIZE_FLAGS += "-fstrict-aliasing -fargument-noalias -fargument-noalias-global "
   OPTIMIZE_FLAGS += "-fcprop-registers "
-  OPTIMIZE_FLAGS += "-fipa-cp -fipa-pta -fipa-pure-const -fipa-reference "
+  # no avail on gcc 4.0.1 # OPTIMIZE_FLAGS += "-fipa-cp -fipa-pta -fipa-pure-const -fipa-reference "
   OPTIMIZE_FLAGS += "-fschedule-insns2 -fsched2-use-superblocks "
   OPTIMIZE_FLAGS += "-fivopts "
   OPTIMIZE_FLAGS += "-ftree-loop-linear "
@@ -91,7 +96,10 @@ def make_program(main_name):
   
   elif compiler == 'gcc':
   
-    DEFAULT_LIBS = ['user32', 'gdi32', 'winmm']
+    if platform == "darwin":
+      pass
+    else:
+      DEFAULT_LIBS = ['user32', 'gdi32', 'winmm']
 
   #
   
@@ -103,10 +111,10 @@ def make_program(main_name):
 
 ##
 
-UnitTestPlusPlus = SConscript('#\\..\\..\\..\\external\\UnitTest++\\SConscript')
+UnitTestPlusPlus = SConscript('#/../../../external/UnitTest++/SConscript')
 print "UnitTestPlusPlus = %s" % str(UnitTestPlusPlus)
 
-rtgu_image_io = SConscript('#\\..\\..\\image_io\\SConscript')
+rtgu_image_io = SConscript('#/../../image_io/SConscript')
 print "rtgu_image_io = %s" % str(rtgu_image_io)
 
 ##
@@ -136,7 +144,10 @@ def make_test(name, additional_libs=[]):
   
   elif compiler == 'gcc':
   
-    DEFAULT_LIBS = ['user32', 'gdi32', 'winmm']
+    if platform == "darwin":
+      pass
+    else:
+      DEFAULT_LIBS = ['user32', 'gdi32', 'winmm']
 
   sources = [ name+'.cpp' ] + FRAMEWORK + UnitTestPlusPlus + additional_libs
 
@@ -160,5 +171,6 @@ make_test('image_algorithm')
 make_test('image_creation')
 make_test('image_gil_internals')
 make_test('image_io_gil_borrowed_image')
-make_test('image_io', additional_libs=rtgu_image_io)
-make_test('image_resize', additional_libs=rtgu_image_io)
+make_test('image_resize') #, additional_libs=rtgu_image_io)
+if platform != "darwin":
+  make_test('image_io', additional_libs=rtgu_image_io)
