@@ -2,6 +2,7 @@
 #define BOOST_GIL_RESCALE_VIRTUAL_VIEW_HPP
 
 #include <boost/gil/virtual_locator.hpp>
+#include <boost/shared_ptr.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -62,10 +63,10 @@ namespace boost { namespace gil {
         _weight_table->reset( filter, view.width(), dst_width );
       }
 
-      __forceinline result_type operator()(const point_t& p) const
+      GIL_FORCEINLINE result_type operator()(const point_t& p) const
       {
         typedef typename SourceView::value_type src_pixel_t;
-        typedef gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
+        typedef typename gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
 
         value_type result;
 
@@ -89,16 +90,16 @@ namespace boost { namespace gil {
 template <typename SourceView>
 struct boost::gil::rescale_x_view_type
 {
-  GIL_CLASS_REQUIRE(SourceView, boost::gil, ImageViewConcept);
+  GIL_CLASS_REQUIRE(SourceView, boost::gil, ImageViewConcept)
 
   typedef typename detail::rescale_x_fn<SourceView> function_t;
-  typedef typename virtual_2d_locator<function_t, false> locator_t;
-  typedef typename image_view<locator_t> view_t;
+  typedef typename boost::gil::virtual_2d_locator<function_t, false> locator_t;
+  typedef typename boost::gil::image_view<locator_t> view_t;
 
   template <typename Filter>
   static view_t make(SourceView const& view, typename SourceView::coord_t dst_width, const Filter& filter)
   {
-    typedef function_t::point_t point_t;
+    typedef typename function_t::point_t point_t;
 
     point_t dims(dst_width, view.height());
 
@@ -150,10 +151,10 @@ namespace boost { namespace gil {
         _weight_table->reset( filter, view.height(), dst_height );
       }
 
-      __forceinline result_type operator()(const point_t& p) const
+      GIL_FORCEINLINE result_type operator()(const point_t& p) const
       {
         typedef typename SourceView::value_type src_pixel_t;
-        typedef gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
+        typedef typename gil::detail::create_accum_pixel_type<src_pixel_t>::type accum_pixel_t;
 
         value_type result;
 
@@ -177,16 +178,16 @@ namespace boost { namespace gil {
 template <typename SourceView>
 struct boost::gil::rescale_y_view_type
 {
-  GIL_CLASS_REQUIRE(SourceView, boost::gil, ImageViewConcept);
+  GIL_CLASS_REQUIRE(SourceView, boost::gil, ImageViewConcept)
 
   typedef typename detail::rescale_y_fn<SourceView> function_t;
-  typedef typename virtual_2d_locator<function_t, false> locator_t;
-  typedef typename image_view<locator_t> view_t;
+  typedef typename boost::gil::virtual_2d_locator<function_t, false> locator_t;
+  typedef typename boost::gil::image_view<locator_t> view_t;
 
   template <typename Filter>
   static view_t make(SourceView const& view, typename SourceView::coord_t dst_height, const Filter& filter)
   {
-    typedef function_t::point_t point_t;
+    typedef typename function_t::point_t point_t;
 
     point_t dims(view.width(), dst_height);
 
@@ -210,14 +211,14 @@ typename boost::gil::rescale_y_view_type<SourceView>::view_t
 template <typename SourceView>
 struct boost::gil::rescale_view_type
 {
-  GIL_CLASS_REQUIRE(SourceView, boost::gil, ImageViewConcept);
-  
-  typedef rescale_x_view_type<SourceView> composition1_t;
-  typedef rescale_y_view_type<typename composition1_t::view_t> composition2_t;
-  
+  GIL_CLASS_REQUIRE(SourceView, boost::gil, ImageViewConcept)
+
+  typedef boost::gil::rescale_x_view_type<SourceView> composition1_t;
+  typedef boost::gil::rescale_y_view_type<typename composition1_t::view_t> composition2_t;
+
   typedef typename composition2_t::function_t function_t;
-  typedef typename virtual_2d_locator< function_t,false > locator_t;
-  typedef typename image_view<locator_t> view_t;
+  typedef typename boost::gil::virtual_2d_locator< function_t,false > locator_t;
+  typedef typename boost::gil::image_view<locator_t> view_t;
 };
 
 template <typename SourceView, typename Filter>
@@ -225,9 +226,9 @@ typename boost::gil::rescale_view_type<SourceView>::view_t
   boost::gil::rescale_view(SourceView const& view, typename SourceView::coord_t dst_width, typename SourceView::coord_t dst_height, const Filter& filter)
 {
   typedef rescale_view_type<SourceView> view_factory_t;
-  
-  typedef view_factory_t::composition1_t composition1_t;
-  typedef view_factory_t::composition2_t composition2_t;
+
+  typedef typename view_factory_t::composition1_t composition1_t;
+  typedef typename view_factory_t::composition2_t composition2_t;
 
   return composition2_t::make( composition1_t::make(view, dst_width, filter), dst_height, filter );
 }
