@@ -67,7 +67,6 @@ namespace rtgu { namespace image {
 // TODO
 // insert_image
 // crop
-// accum_pixels
 // premultiply_alpha
 // rgb_to_rgbmax
 // _conversions_

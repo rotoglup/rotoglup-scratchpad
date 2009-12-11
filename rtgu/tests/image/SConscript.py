@@ -172,5 +172,6 @@ make_test('image_creation')
 make_test('image_gil_internals')
 make_test('image_io_gil_borrowed_image')
 make_test('image_resize') #, additional_libs=rtgu_image_io)
+make_test('image_filters') #, additional_libs=rtgu_image_io)
 if platform != "darwin":
   make_test('image_io', additional_libs=rtgu_image_io)
