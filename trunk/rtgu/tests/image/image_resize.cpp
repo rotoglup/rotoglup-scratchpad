@@ -5,8 +5,8 @@
 #include "UnitTest++/TestReporterStdout.h"
 
 //#include <rtgu/image_io/image_io.hpp>
+#include <rtgu/image/filter_all.hpp>
 #include <rtgu/image/filter_weight_table.hpp>
-#include <rtgu/image/filters.hpp>
 #include <rtgu/image/rescale.hpp>
 #include <rtgu/image/rescale_any_view.hpp>
 #include <rtgu/image/rescale_virtual_view.hpp>
@@ -29,7 +29,7 @@ struct DefaultValues
 
 TEST_FIXTURE(DefaultValues, WeightTable)
 {
-  bgil::bilinear_filter filter;
+  bgil::filter_triangle filter;
 
   bgil::detail::weight_table downsample_table;
   downsample_table.reset( filter, 1000, 500 );
@@ -81,7 +81,7 @@ TEST_FIXTURE(DefaultValues, RescaleLineDimensionMismatch)
   typedef bgil::bgra8_pixel_t   src_pixel_t;
   typedef bgil::rgba8_pixel_t   dst_pixel_t;
 
-  bgil::bilinear_filter filter;
+  bgil::filter_triangle filter;
 
   {
     bgil::image<src_pixel_t, false> src(3, 3);
@@ -100,7 +100,7 @@ TEST_FIXTURE(DefaultValues, RescaleLineDimensionMatch)
   typedef bgil::bgra8_pixel_t   src_pixel_t;
   typedef bgil::rgba8_pixel_t   dst_pixel_t;
 
-  bgil::bilinear_filter filter;
+  bgil::filter_triangle filter;
 
   {
     bgil::image<src_pixel_t, false> src(3, 3);

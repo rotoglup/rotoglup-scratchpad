@@ -66,34 +66,36 @@ namespace detail
 template <typename Filter>
 void boost::gil::detail::weight_table::reset(Filter const& filter, unsigned src_size, unsigned dst_size)
 {
-  float const filter_width = static_cast<float>( filter.width() );
-
-  // scale factor from source to destination
   float const scale_factor = static_cast<float>(dst_size) / static_cast<float>(src_size);
-
   float sample_width, filter_scale_factor;
 
-  if (scale_factor < 1.0)
+  // allocate tables
+
   {
-    // minification
-    sample_width  = filter_width / scale_factor; 
-    filter_scale_factor = scale_factor; 
+    float const filter_width = static_cast<float>( filter.width() );
+
+    if (scale_factor < 1.0)
+    {
+      // minification
+      sample_width  = filter_width / scale_factor; 
+      filter_scale_factor = scale_factor; 
+    }
+    else
+    {
+      // magnification
+      sample_width  = filter_width;
+      filter_scale_factor = 1.0f;
+    }
+
+    // window size is the number of sampled source pixels per destination pixel
+    _window_size = 2 * static_cast<int>( ceil(sample_width) ) + 1; 
+
+    // allocate list of contributions 
+    _contribution_table.resize( dst_size );
+
+    // allocate vector for every needed weight factor
+    _weights_storage.resize( dst_size * _window_size );
   }
-  else
-  {
-    // magnification
-    sample_width  = filter_width;
-    filter_scale_factor = 1.0f;
-  }
-
-  // window size is the number of sampled source pixels per destination pixel
-  _window_size = 2 * static_cast<int>( ceil(sample_width) ) + 1; 
-
-  // allocate list of contributions 
-  _contribution_table.resize( dst_size );
-
-  // allocate vector for every needed weight factor
-  _weights_storage.resize( dst_size * _window_size );
 
   // offset for discrete to continuous coordinate conversion
   float const scale_offset = (0.5f / scale_factor) - 0.5f;
@@ -139,7 +141,7 @@ void boost::gil::detail::weight_table::reset(Filter const& filter, unsigned src_
     for (int srcx = sample_begin; srcx <= sample_end; srcx++)
     {
       float x = filter_scale_factor * (sample_center - static_cast<float>(srcx));
-      float filter_value = filter.filter(x);
+      float filter_value = filter.evaluate(x);
       float weight = filter_scale_factor * filter_value;
       
       total_weight += weight;
