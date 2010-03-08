@@ -19,6 +19,8 @@
 
 #define POPUP_MODAL_ON_TIMER 0
 
+#define WORKAROUND_ATTEMPT 3
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -40,6 +42,57 @@
 HDC g_gl_hdc = NULL;
 
 BOOL initOpenGL(HWND hWnd);
+
+/* WGL_ARB_pixel_format */
+#define GL_CONST(name, value) unsigned const name = value;
+GL_CONST(WGL_NUMBER_PIXEL_FORMATS_ARB, 0x2000)
+GL_CONST(WGL_DRAW_TO_WINDOW_ARB, 0x2001)
+GL_CONST(WGL_DRAW_TO_BITMAP_ARB, 0x2002)
+GL_CONST(WGL_ACCELERATION_ARB, 0x2003)
+GL_CONST(WGL_NEED_PALETTE_ARB, 0x2004)
+GL_CONST(WGL_NEED_SYSTEM_PALETTE_ARB, 0x2005)
+GL_CONST(WGL_SWAP_LAYER_BUFFERS_ARB, 0x2006)
+GL_CONST(WGL_SWAP_METHOD_ARB, 0x2007)
+GL_CONST(WGL_NUMBER_OVERLAYS_ARB, 0x2008)
+GL_CONST(WGL_NUMBER_UNDERLAYS_ARB, 0x2009)
+GL_CONST(WGL_TRANSPARENT_ARB, 0x200A)
+GL_CONST(WGL_TRANSPARENT_RED_VALUE_ARB, 0x2037)
+GL_CONST(WGL_TRANSPARENT_GREEN_VALUE_ARB, 0x2038)
+GL_CONST(WGL_TRANSPARENT_BLUE_VALUE_ARB, 0x2039)
+GL_CONST(WGL_TRANSPARENT_ALPHA_VALUE_ARB, 0x203A)
+GL_CONST(WGL_TRANSPARENT_INDEX_VALUE_ARB, 0x203B)
+GL_CONST(WGL_SHARE_DEPTH_ARB, 0x200C)
+GL_CONST(WGL_SHARE_STENCIL_ARB, 0x200D)
+GL_CONST(WGL_SHARE_ACCUM_ARB, 0x200E)
+GL_CONST(WGL_SUPPORT_GDI_ARB, 0x200F)
+GL_CONST(WGL_SUPPORT_OPENGL_ARB, 0x2010)
+GL_CONST(WGL_DOUBLE_BUFFER_ARB, 0x2011)
+GL_CONST(WGL_STEREO_ARB, 0x2012)
+GL_CONST(WGL_PIXEL_TYPE_ARB, 0x2013)
+GL_CONST(WGL_COLOR_BITS_ARB, 0x2014)
+GL_CONST(WGL_RED_BITS_ARB, 0x2015)
+GL_CONST(WGL_RED_SHIFT_ARB, 0x2016)
+GL_CONST(WGL_GREEN_BITS_ARB, 0x2017)
+GL_CONST(WGL_GREEN_SHIFT_ARB, 0x2018)
+GL_CONST(WGL_BLUE_BITS_ARB, 0x2019)
+GL_CONST(WGL_BLUE_SHIFT_ARB, 0x201A)
+GL_CONST(WGL_ALPHA_BITS_ARB, 0x201B)
+GL_CONST(WGL_ALPHA_SHIFT_ARB, 0x201C)
+GL_CONST(WGL_ACCUM_BITS_ARB, 0x201D)
+GL_CONST(WGL_ACCUM_RED_BITS_ARB, 0x201E)
+GL_CONST(WGL_ACCUM_GREEN_BITS_ARB, 0x201F)
+GL_CONST(WGL_ACCUM_BLUE_BITS_ARB, 0x2020)
+GL_CONST(WGL_ACCUM_ALPHA_BITS_ARB, 0x2021)
+GL_CONST(WGL_DEPTH_BITS_ARB, 0x2022)
+GL_CONST(WGL_STENCIL_BITS_ARB, 0x2023)
+GL_CONST(WGL_AUX_BUFFERS_ARB, 0x2024)
+GL_CONST(WGL_NO_ACCELERATION_ARB, 0x2025)
+GL_CONST(WGL_GENERIC_ACCELERATION_ARB, 0x2026)
+GL_CONST(WGL_FULL_ACCELERATION_ARB, 0x2027)
+GL_CONST(WGL_SWAP_EXCHANGE_ARB, 0x2028)
+GL_CONST(WGL_SWAP_COPY_ARB, 0x2029)
+GL_CONST(WGL_SWAP_UNDEFINED_ARB, 0x202A)
+GL_CONST(WGL_TYPE_RGBA_ARB, 0x202B)
 
 #else
 
@@ -230,22 +283,137 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #if USE_OPENGL
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+BOOL initOpenGL_classic(HWND hWnd);
+BOOL initOpenGL_with_WGL_ARB_pixel_format(HWND hWnd);
 
 BOOL initOpenGL(HWND hWnd)
 {
-  HMODULE library = LoadLibrary( TEXT("DWMAPI.DLL") );
+#if WORKAROUND_ATTEMPT==3
+  return initOpenGL_with_WGL_ARB_pixel_format(hWnd);
+#else
+  return initOpenGL_classic(hWnd);
+#endif
+}
+
+//----------------------------------------------------------------------------
+
+BOOL initOpenGL_with_WGL_ARB_pixel_format(HWND hWnd)
+{
+  // quick and dirty code, no cleanup done on temporary window
+
+  HWND hWndTemp = CreateWindow(TEXT("STATIC"), NULL, WS_POPUP|WS_CLIPSIBLINGS|WS_CLIPCHILDREN, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
+
+  initOpenGL_classic(hWndTemp);
+
+  //
+
+  typedef PROC (__stdcall *TYPE_wglGetProcAddress)(LPCSTR);
+  typedef BOOL (__stdcall *TYPE_wglChoosePixelFormatARB)(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+
+  TYPE_wglGetProcAddress wglGetProcAddress = NULL;
+  TYPE_wglChoosePixelFormatARB wglChoosePixelFormatARB = NULL;
+
+  HMODULE library = LoadLibrary( TEXT("opengl32.dll") );
   if (library != 0)
   {
-    typedef HRESULT (__stdcall *PFN)(UINT);
-    PFN func = (PFN)GetProcAddress( library, "DwmEnableComposition" );
-    if (func != 0)
+    wglGetProcAddress = (TYPE_wglGetProcAddress) GetProcAddress( library, "wglGetProcAddress" );
+
+    if (wglGetProcAddress != NULL)
     {
-      func( /*DWM_EC_DISABLECOMPOSITION*/ 0 );
+      wglChoosePixelFormatARB = (TYPE_wglChoosePixelFormatARB) wglGetProcAddress( "wglChoosePixelFormatARB" );
     }
+
     FreeLibrary (library);
   }
 
+  if (wglChoosePixelFormatARB == NULL)
+  {
+    return initOpenGL_classic(hWnd);
+  }
+
+  //
+
+  int Attrib[128], i=0;
+  Attrib[i++]=WGL_DRAW_TO_WINDOW_ARB;
+  Attrib[i++]=true;
+  Attrib[i++]=WGL_SUPPORT_OPENGL_ARB;
+  Attrib[i++]=true;
+  Attrib[i++]=WGL_DOUBLE_BUFFER_ARB;
+  Attrib[i++]=true;
+  Attrib[i++]=WGL_SWAP_METHOD_ARB;
+  Attrib[i++]=WGL_SWAP_COPY_ARB;            //< this is what make the modal dialog work
+  Attrib[i++]=WGL_PIXEL_TYPE_ARB;
+  Attrib[i++]=WGL_TYPE_RGBA_ARB;
+  Attrib[i++]=WGL_COLOR_BITS_ARB;
+  Attrib[i++]=32;
+  Attrib[i++]=WGL_ALPHA_BITS_ARB;
+  Attrib[i++]=8;
+  Attrib[i++]=WGL_DEPTH_BITS_ARB;
+  Attrib[i++]=24;
+  Attrib[i++]=WGL_STENCIL_BITS_ARB;
+  Attrib[i++]=8;
+  Attrib[i++]=0;
+
+  int selected_pf = 0;
+  HDC hdc = ::GetDC(hWnd);
+
+  UINT NumFormats = 0;
+  if (!wglChoosePixelFormatARB(hdc, Attrib, NULL, 1, &selected_pf, &NumFormats))
+  {
+    return FALSE;
+  }
+  if (NumFormats == 0)
+  {
+    return FALSE;
+  }
+  PIXELFORMATDESCRIPTOR pfd;
+  if ( !SetPixelFormat( hdc, selected_pf, &pfd) )
+  {
+    return FALSE;
+  }
+
+  HGLRC hglrc = wglCreateContext(hdc);
+  if (hglrc == 0)
+  {
+    return FALSE;
+  }
+
+  if (!wglMakeCurrent(hdc, hglrc))
+  {
+    return FALSE;
+  }
+  
+  g_gl_hdc = hdc;
+  
+  return TRUE;
+}
+
+//----------------------------------------------------------------------------
+
+BOOL initOpenGL_classic(HWND hWnd)
+{
+#if WORKAROUND_ATTEMPT == 1
+  {
+    HMODULE library = LoadLibrary( TEXT("DWMAPI.DLL") );
+    if (library != 0)
+    {
+      typedef HRESULT (__stdcall *PFN)(UINT);
+      PFN func = (PFN)GetProcAddress( library, "DwmEnableComposition" );
+      if (func != 0)
+      {
+        func( /*DWM_EC_DISABLECOMPOSITION*/ 0 );
+      }
+      FreeLibrary (library);
+    }
+  }
+#endif
+
   // OpenGL
+
+  int  selected_pf;
+  HDC hdc = ::GetDC(hWnd);
 
   PIXELFORMATDESCRIPTOR pfd;
    memset(&pfd, 0, sizeof(pfd));
@@ -253,10 +421,14 @@ BOOL initOpenGL(HWND hWnd)
    pfd.nVersion = 1;
    pfd.dwFlags = 
     PFD_DRAW_TO_WINDOW |
-		PFD_SUPPORT_OPENGL | 
-		PFD_DOUBLEBUFFER |
-		PFD_GENERIC_ACCELERATED |
+	  PFD_SUPPORT_OPENGL | 
+	  PFD_DOUBLEBUFFER |
+	  PFD_GENERIC_ACCELERATED |
+#if WORKAROUND_ATTEMPT == 2
+    PFD_SWAP_COPY
+#else
     PFD_SWAP_EXCHANGE
+#endif
     ;
    pfd.iPixelType = PFD_TYPE_RGBA;
    pfd.cColorBits = 32;
@@ -265,9 +437,6 @@ BOOL initOpenGL(HWND hWnd)
    pfd.cStencilBits = 8;
    pfd.iLayerType = PFD_MAIN_PLANE;
 
-  int  selected_pf;
-
-  HDC hdc = ::GetDC(hWnd);
   if ( ( selected_pf = ChoosePixelFormat( hdc, &pfd ) ) == 0 )
   {
     return FALSE;
@@ -288,7 +457,7 @@ BOOL initOpenGL(HWND hWnd)
   {
     return FALSE;
   }
-
+  
   g_gl_hdc = hdc;
   
   return TRUE;
