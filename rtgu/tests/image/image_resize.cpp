@@ -6,7 +6,6 @@
 
 //#include <rtgu/image_io/image_io.hpp>
 #include <rtgu/image/filter_all.hpp>
-#include <rtgu/image/filter_weight_table.hpp>
 #include <rtgu/image/rescale.hpp>
 #include <rtgu/image/rescale_any_view.hpp>
 #include <rtgu/image/rescale_virtual_view.hpp>
