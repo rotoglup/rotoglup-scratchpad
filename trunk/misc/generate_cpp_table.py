@@ -40,7 +40,6 @@ print "%s const %s[%s_len] = {" % (data_type, table_name, table_name)
 table_lines = []
 for line in lines:
   values = line.strip().split("\t")
-  values = values[:-1]
   print "  { " + (",".join(values)) + " },"
   table_lines.append(line)
 print "};"
