@@ -10,7 +10,7 @@
 # include <tbb/parallel_for.h>
 #endif // ifdef USE_INTEL_TBB
 
-#include "filter_weight_table.hpp"
+#include "filter_kernel_1d.hpp"
 
 #ifdef _MSC_VER
 // Turn on fast floating-point optimizations
@@ -37,8 +37,8 @@ namespace boost { namespace gil {
   // rescale src view into dst view, matching dst view dimensions
   template <typename SrcView, typename DstView>
   inline void rescale(const SrcView& src, const DstView& dst
-    , const detail::weight_table& horizontal_weights
-    , const detail::weight_table& vertical_weights
+    , const filter_kernel_1d& horizontal_weights
+    , const filter_kernel_1d& vertical_weights
     );
 
   // rescale src view into dst view, matching dst view dimensions
@@ -214,11 +214,11 @@ inline void boost::gil::rescale_cols(const SrcView& src, const DstView& dst, con
     throw std::runtime_error("rescale_cols: height of source and destination views must match");
   }
 
-  detail::weight_table weights;
-  weights.reset(filter, src.width(), dst.width());
+  filter_kernel_1d kernel;
+  kernel.reset(filter, src.width(), dst.width());
 
-  detail::weight_table::const_iterator const table_begin = weights.begin();
-  detail::weight_table::const_iterator const table_end   = weights.end();
+  filter_kernel_1d::const_iterator const kernel_begin = kernel.begin();
+  filter_kernel_1d::const_iterator const kernel_end   = kernel.end();
 
   typedef typename DstView::coord_t coord_t;
   coord_t const height = dst.height();
@@ -228,8 +228,8 @@ inline void boost::gil::rescale_cols(const SrcView& src, const DstView& dst, con
     detail::rescale_line<accum_pixel_t>(
         src.row_begin(y)
       , dst.row_begin(y)
-      , table_begin
-      , table_end
+      , kernel_begin
+      , kernel_end
       );
   }
 }
@@ -247,11 +247,11 @@ inline void boost::gil::rescale_rows(const SrcView& src, const DstView& dst, con
     throw std::runtime_error("rescale_rows: width of source and destination views must match");
   }
 
-  detail::weight_table weights;
-  weights.reset(filter, src.height(), dst.height());
+  filter_kernel_1d kernel;
+  kernel.reset(filter, src.height(), dst.height());
 
-  detail::weight_table::const_iterator const table_begin = weights.begin();
-  detail::weight_table::const_iterator const table_end   = weights.end();
+  filter_kernel_1d::const_iterator const kernel_begin = kernel.begin();
+  filter_kernel_1d::const_iterator const kernel_end   = kernel.end();
 
   typedef typename DstView::coord_t coord_t;
   coord_t const width = dst.width();
@@ -261,8 +261,8 @@ inline void boost::gil::rescale_rows(const SrcView& src, const DstView& dst, con
     detail::rescale_line<accum_pixel_t>(
         src.col_begin(x)
       , dst.col_begin(x)
-      , table_begin
-      , table_end
+      , kernel_begin
+      , kernel_end
       );
   }
 }
@@ -344,7 +344,7 @@ namespace {
 //----------------------------------------------------------------------------
 
 template <typename SrcView, typename DstView>
-inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const detail::weight_table& horizontal_weights, const detail::weight_table& vertical_weights)
+inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const filter_kernel_1d& horizontal_weights, const filter_kernel_1d& vertical_weights)
 {
 #if USE_INTEL_TBB
 
@@ -380,8 +380,8 @@ inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const de
   {
     // create the intermediate row by sampling the source image columns
 
-    detail::weight_table::const_iterator const vtable_begin = vertical_weights.begin() + y;
-    detail::weight_table::const_iterator const vtable_end   = vtable_begin + 1;
+    filter_kernel_1d::const_iterator const vtable_begin = vertical_weights.begin() + y;
+    filter_kernel_1d::const_iterator const vtable_end   = vtable_begin + 1;
 
     for (coord_t x=0; x<src_width; x++)
     {
@@ -395,8 +395,8 @@ inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const de
 
     // scale horizontally the intermediate row into the destination row
 
-    detail::weight_table::const_iterator const htable_begin = horizontal_weights.begin();
-    detail::weight_table::const_iterator const htable_end   = horizontal_weights.end();
+    filter_kernel_1d::const_iterator const htable_begin = horizontal_weights.begin();
+    filter_kernel_1d::const_iterator const htable_end   = horizontal_weights.end();
 
     detail::rescale_line<accum_pixel_t>(
         intermediate_row.begin()
@@ -416,10 +416,10 @@ inline void boost::gil::rescale(const SrcView& src, const DstView& dst, const Fi
 {
   // construct weights tables
 
-  detail::weight_table horizontal_weights;
+  filter_kernel_1d horizontal_weights;
   horizontal_weights.reset(filter, src.width(), dst.width());
 
-  detail::weight_table vertical_weights;
+  filter_kernel_1d vertical_weights;
   vertical_weights.reset(filter, src.height(), dst.height());
 
   // rescale
