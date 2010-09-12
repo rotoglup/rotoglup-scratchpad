@@ -24,7 +24,7 @@ struct filter_kaiser
   float evaluate(float x) const { 
     const float sinc_value = filter_sinc::sincf(filter_sinc::pi() * x * f_stretch);
     const float t = x / f_width;
-    if ((1.f - t * t) >= 0.f) return sinc_value * bessel0(f_alpha * std::sqrtf(1.f - t * t)) / bessel0(f_alpha);
+    if ((1.f - t * t) >= 0.f) return sinc_value * bessel0(f_alpha * std::sqrt(1.f - t * t)) / bessel0(f_alpha);
     else return 0.f;
   }
 
