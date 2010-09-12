@@ -26,19 +26,50 @@ struct DefaultValues
 };
 
 
-TEST_FIXTURE(DefaultValues, WeightTable)
+TEST(DownscaleKernel1D)
 {
+  unsigned const src_size = 1000;
+  unsigned const factor = 4;
+  unsigned const dst_size = src_size / factor;
+
   bgil::filter_triangle filter;
 
-  bgil::filter_kernel_1d downsample_table;
-  downsample_table.reset( filter, 1000, 500 );
+  bgil::filter_kernel_1d kernel;
+  kernel.reset( filter, src_size, dst_size );
+  
+  // kernel window size
 
-  CHECK( downsample_table.window_size() > filter.width() );
+  CHECK_EQUAL( factor * 2 * filter.width() + 1, kernel.window_size() );
+  
+  // kernel iterator
+  
+  bgil::filter_kernel_1d::const_iterator kernel_it = kernel.begin();
+  std::advance( kernel_it, dst_size );
+  
+  CHECK( kernel_it == kernel.end() );
+}
 
-  bgil::filter_kernel_1d upsample_table;
-  upsample_table.reset( filter, 500, 1000 );
+TEST(UpscaleKernel1D)
+{
+  unsigned const src_size = 1000;
+  unsigned const factor = 4;
+  unsigned const dst_size = src_size * factor;
 
-  CHECK( upsample_table.window_size() == 2 * filter.width() + 1 );
+  bgil::filter_triangle filter;
+
+  bgil::filter_kernel_1d kernel;
+  kernel.reset( filter, src_size, dst_size );
+
+  // kernel window size
+
+  CHECK_EQUAL( 2 * filter.width() + 1, kernel.window_size() );
+  
+  // kernel iterator
+  
+  bgil::filter_kernel_1d::const_iterator kernel_it = kernel.begin();
+  std::advance( kernel_it, dst_size );
+  
+  CHECK( kernel_it == kernel.end() );
 }
 
 //----------------------------------------------------------------------------
@@ -72,6 +103,7 @@ TEST_FIXTURE(DefaultValues, RescaleLine)
 
   bgil::detail::rescale_line<accum_pixel_t>( src, dst, &contrib, &contrib+1 );
 
+  CHECK_EQUAL( src_pixel_t(32,64,128,255), dst[0] );
   CHECK_EQUAL( dst_pixel_t(128,64,32,255), dst[0] );
 }
 
