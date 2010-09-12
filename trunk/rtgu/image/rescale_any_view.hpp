@@ -13,7 +13,7 @@ namespace boost { namespace gil {
 
   template <typename ViewTypes>
   inline void rescale_any_view(any_image_view<ViewTypes>& src, any_image_view<ViewTypes>& dst
-    , const detail::weight_table& horizontal_weights, const detail::weight_table& vertical_weights
+    , const filter_kernel_1d& horizontal_weights, const filter_kernel_1d& vertical_weights
     );
 
 } }
@@ -26,10 +26,10 @@ namespace detail {
 
   struct rescale_obj : public binary_operation_obj<rescale_obj>
   {
-    const detail::weight_table& _horizontal_weights;
-    const detail::weight_table& _vertical_weights;
+    const filter_kernel_1d& _horizontal_weights;
+    const filter_kernel_1d& _vertical_weights;
 
-    rescale_obj(const detail::weight_table& horizontal_weights, const detail::weight_table& vertical_weights)
+    rescale_obj(const filter_kernel_1d& horizontal_weights, const filter_kernel_1d& vertical_weights)
       : _horizontal_weights(horizontal_weights), _vertical_weights(vertical_weights)
     {}
 
@@ -46,12 +46,12 @@ namespace detail {
 template <typename ViewTypes, typename Filter>
 inline void boost::gil::rescale_any_view(any_image_view<ViewTypes>& src, any_image_view<ViewTypes>& dst, const Filter& filter)
 {
-  // construct weights tables
-
-  detail::weight_table horizontal_weights;
+  // construct kernels
+  
+  filter_kernel_1d horizontal_weights;
   horizontal_weights.reset(filter, src.width(), dst.width());
 
-  detail::weight_table vertical_weights;
+  filter_kernel_1d vertical_weights;
   vertical_weights.reset(filter, src.height(), dst.height());
 
   // rescale
@@ -60,7 +60,7 @@ inline void boost::gil::rescale_any_view(any_image_view<ViewTypes>& src, any_ima
 }
 
 template <typename ViewTypes>
-inline void boost::gil::rescale_any_view(any_image_view<ViewTypes>& src, any_image_view<ViewTypes>& dst, const detail::weight_table& horizontal_weights, const detail::weight_table& vertical_weights)
+inline void boost::gil::rescale_any_view(any_image_view<ViewTypes>& src, any_image_view<ViewTypes>& dst, const filter_kernel_1d& horizontal_weights, const filter_kernel_1d& vertical_weights)
 {
   apply_operation( src, dst, detail::rescale_obj(horizontal_weights, vertical_weights) );
 }

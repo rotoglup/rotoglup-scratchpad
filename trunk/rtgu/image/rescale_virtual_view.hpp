@@ -53,13 +53,13 @@ namespace boost { namespace gil {
       BOOST_STATIC_CONSTANT(bool, is_mutable=false);
 
       SourceView   _srcview;
-      boost::shared_ptr<weight_table> _weight_table;
+      boost::shared_ptr<filter_kernel_1d> _weight_table;
 
       template <typename Filter>
       rescale_x_fn(const SourceView& view, typename SourceView::coord_t dst_width, const Filter& filter)
         : _srcview(view)
       {
-        _weight_table.reset( new weight_table );
+        _weight_table.reset( new filter_kernel_1d );
         _weight_table->reset( filter, view.width(), dst_width );
       }
 
@@ -70,8 +70,8 @@ namespace boost { namespace gil {
 
         value_type result;
 
-        detail::weight_table::const_iterator const weights_begin = _weight_table->begin() + p.x;
-        detail::weight_table::const_iterator const weights_end   = weights_begin + 1;
+        filter_kernel_1d::const_iterator const weights_begin = _weight_table->begin() + p.x;
+        filter_kernel_1d::const_iterator const weights_end   = weights_begin + 1;
 
         detail::rescale_line<accum_pixel_t>(
           _srcview.row_begin(p.y)
@@ -141,13 +141,13 @@ namespace boost { namespace gil {
       BOOST_STATIC_CONSTANT(bool, is_mutable=false);
 
       SourceView   _srcview;
-      boost::shared_ptr<weight_table> _weight_table;
+      boost::shared_ptr<filter_kernel_1d> _weight_table;
 
       template <typename Filter>
       rescale_y_fn(const SourceView& view, typename SourceView::coord_t dst_height, const Filter& filter)
         : _srcview(view)
       {
-        _weight_table.reset( new weight_table );
+        _weight_table.reset( new filter_kernel_1d );
         _weight_table->reset( filter, view.height(), dst_height );
       }
 
@@ -158,8 +158,8 @@ namespace boost { namespace gil {
 
         value_type result;
 
-        detail::weight_table::const_iterator const weights_begin = _weight_table->begin() + p.y;
-        detail::weight_table::const_iterator const weights_end   = weights_begin + 1;
+        filter_kernel_1d::const_iterator const weights_begin = _weight_table->begin() + p.y;
+        filter_kernel_1d::const_iterator const weights_end   = weights_begin + 1;
 
         detail::rescale_line<accum_pixel_t>(
           _srcview.col_begin(p.x)

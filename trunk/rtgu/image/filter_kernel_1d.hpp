@@ -9,14 +9,12 @@
 
 namespace boost { namespace gil {
 
-namespace detail
-{
   //----------------------------------------------------------------------------
   /**
-    Filter weights table.<br>
+    Filter 1D kernel.<br>
     This class stores contribution information for an entire line (row or column).
   */
-  class weight_table : boost::noncopyable
+  class filter_kernel_1d : boost::noncopyable
   {
     /** 
       Sampled filter weight table.<br>
@@ -40,7 +38,7 @@ namespace detail
 
     typedef std::vector<Contribution>::const_iterator const_iterator;
 
-    weight_table() {};
+    filter_kernel_1d() {};
 
 	  /** 
 	  Allocate and compute the weights table
@@ -59,12 +57,10 @@ namespace detail
 
   //----------------------------------------------------------------------------
 
-} // namespace detail
-
 } }   // namespace boost::gil
 
 template <typename Filter>
-void boost::gil::detail::weight_table::reset(Filter const& filter, unsigned src_size, unsigned dst_size)
+void boost::gil::filter_kernel_1d::reset(Filter const& filter, unsigned src_size, unsigned dst_size)
 {
   float const scale_factor = static_cast<float>(dst_size) / static_cast<float>(src_size);
   float sample_width, filter_scale_factor;

@@ -30,12 +30,12 @@ TEST_FIXTURE(DefaultValues, WeightTable)
 {
   bgil::filter_triangle filter;
 
-  bgil::detail::weight_table downsample_table;
+  bgil::filter_kernel_1d downsample_table;
   downsample_table.reset( filter, 1000, 500 );
 
   CHECK( downsample_table.window_size() > filter.width() );
 
-  bgil::detail::weight_table upsample_table;
+  bgil::filter_kernel_1d upsample_table;
   upsample_table.reset( filter, 500, 1000 );
 
   CHECK( upsample_table.window_size() == 2 * filter.width() + 1 );
