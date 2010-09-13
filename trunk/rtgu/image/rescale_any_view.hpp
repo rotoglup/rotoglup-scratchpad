@@ -34,9 +34,9 @@ namespace detail {
     {}
 
     template <typename V1, typename V2>
-    GIL_FORCEINLINE bool apply_compatible(const V1& v1, const V2& v2) const
+    GIL_FORCEINLINE void apply_compatible(const V1& v1, const V2& v2) const
     {
-      return rescale( v1, v2, _horizontal_weights, _vertical_weights );
+      rescale( v1, v2, _horizontal_weights, _vertical_weights );
     }
   };
 }
