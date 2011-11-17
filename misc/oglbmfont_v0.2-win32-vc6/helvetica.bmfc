@@ -1,0 +1,50 @@
+# AngelCode Bitmap Font Generator configuration file
+fileVersion=1
+
+# font settings
+fontName=Helvetica LT
+charSet=0
+fontSize=-16
+aa=2
+scaleH=100
+useSmoothing=1
+isBold=0
+isItalic=0
+useUnicode=1
+disableBoxChars=1
+outputInvalidCharGlyph=0
+
+# character alignment
+paddingDown=0
+paddingUp=0
+paddingRight=0
+paddingLeft=0
+spacingHoriz=1
+spacingVert=1
+
+# output file
+outWidth=256
+outHeight=512
+outBitDepth=32
+fontDescFormat=0
+fourChnlPacked=0
+textureFormat=tga
+textureCompression=0
+alphaChnl=0
+redChnl=4
+greenChnl=4
+blueChnl=4
+invA=0
+invR=0
+invG=0
+invB=0
+
+# outline
+outlineThickness=0
+
+# selected chars
+chars=32-126,128,142,158,160-255,305,321-322,338-339,352-353,376,381-382,402,710-711,713,728-733,894,956
+chars=8211-8212,8216-8218,8220-8222,8224-8226,8230,8240,8249-8250,8364,8482,8722,8725,8729,64257-64258
+chars=119155-119162,917505,917536-917631
+
+# imported icon images
