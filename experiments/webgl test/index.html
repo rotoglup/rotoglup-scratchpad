@@ -1,0 +1,403 @@
+<html>
+
+<head>
+<title>Learning WebGL &mdash; lesson 3</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="webgl-utils.js"></script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_FragColor = vColor;
+    }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    //attribute vec4 aVertexColor;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vColor = vec4(1.0); //aVertexColor;
+    }
+</script>
+
+
+<script type="text/javascript">
+
+    
+    function rtgu() {
+
+      var description = null;
+      var vtx_binary = null;
+      var idx_binary = null;
+      
+      var request = new XMLHttpRequest();
+      request.open('GET', 'walk_woman_000_0.json', false); 
+      request.send(null);
+
+      if (request.status == 0)
+      {
+        description = JSON.parse( request.responseText );
+        console.log(description);
+      }
+
+      var request = new XMLHttpRequest();
+      request.open('GET', 'walk_woman_000_0.vbo', false);
+      request.overrideMimeType("text/plain; charset=x-user-defined");   // needed for binary
+      request.send(null);
+
+      if (request.status == 0)
+      {
+        var header = description[0];
+               
+        var data = request.responseText;
+        var datalen = data.length;
+        var ary = new Uint8Array(datalen);
+        for (var i = 0; i <datalen; i++)
+        { ary[i] = data.charCodeAt(i) & 0xff; }
+
+        console.log( data.charCodeAt(34688+0) & 0xff );
+        console.log( data.charCodeAt(34688+1) & 0xff );
+        console.log( data.charCodeAt(34688+2) & 0xff );
+        console.log( data.charCodeAt(34688+3) & 0xff );
+        
+        /*
+        ary[0] = 0;
+        ary[1] = 0;
+        ary[2] = 0x80;
+        ary[3] = 0x3F;
+        ary[4] = 0;
+        ary[5] = 0;
+        ary[6] = 0x80;
+        ary[7] = 0x3F;
+        */
+        
+        var format = gl.FLOAT;
+        //vtx_binary = new Float32Array(ary.buffer, header.data_offset, header.vtx_data_len / Float32Array.BYTES_PER_ELEMENT);
+        vtx_binary = new Uint8Array(ary.buffer, header.data_offset, header.vtx_data_len);
+        //vtx_binary = new ArrayBuffer(ary.buffer, header.data_offset, header.vtx_data_len);
+        idx_binary = new Uint8Array(ary.buffer, header.data_offset+header.vtx_data_len, header.idx_data_len);
+        
+        console.log(idx_binary[0]&255);
+        console.log(idx_binary[1]&255);
+        console.log(idx_binary[2]&255);
+        console.log(idx_binary[3]&255);
+        console.log("header " + header.gl_index_type);
+        console.log("header " + (header.data_offset+header.vtx_data_len));
+        //, header.num_tri*3, 0);
+      }
+      
+      
+      var vtxBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vtx_binary, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+      var idxBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx_binary, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+      
+      return { desc: description, vtx: vtxBuffer, idx: idxBuffer };
+    }
+    
+    var gl;
+
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } catch (e) {
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+    }
+
+
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "x-shader/x-fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (shaderScript.type == "x-shader/x-vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
+
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+
+    var shaderProgram;
+
+    function initShaders() {
+        var fragmentShader = getShader(gl, "shader-fs");
+        var vertexShader = getShader(gl, "shader-vs");
+
+        shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        gl.useProgram(shaderProgram);
+
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+    }
+
+
+    var mvMatrix = mat4.create();
+    var mvMatrixStack = [];
+    var pMatrix = mat4.create();
+
+    function mvPushMatrix() {
+        var copy = mat4.create();
+        mat4.set(mvMatrix, copy);
+        mvMatrixStack.push(copy);
+    }
+
+    function mvPopMatrix() {
+        if (mvMatrixStack.length == 0) {
+            throw "Invalid popMatrix!";
+        }
+        mvMatrix = mvMatrixStack.pop();
+    }
+
+
+    function setMatrixUniforms() {
+        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+    }
+
+
+    function degToRad(degrees) {
+        return degrees * Math.PI / 180;
+    }
+
+    var mesh;
+    var triangleVertexPositionBuffer;
+    var triangleVertexColorBuffer;
+    var squareVertexPositionBuffer;
+    var squareVertexColorBuffer;
+
+    function initBuffers() {
+      
+      mesh = rtgu();
+      
+        triangleVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
+        var vertices = [
+             0.0,  1.0,  0.0,
+            -1.0, -1.0,  0.0,
+             1.0, -1.0,  0.0
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        triangleVertexPositionBuffer.itemSize = 3;
+        triangleVertexPositionBuffer.numItems = 3;
+
+        triangleVertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
+        var colors = [
+            1.0, 0.0, 0.0, 1.0,
+            0.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 1.0,
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+        triangleVertexColorBuffer.itemSize = 4;
+        triangleVertexColorBuffer.numItems = 3;
+
+
+        squareVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+        vertices = [
+             1.0,  1.0,  0.0,
+            -1.0,  1.0,  0.0,
+             1.0, -1.0,  0.0,
+            -1.0, -1.0,  0.0
+            ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        squareVertexPositionBuffer.itemSize = 3;
+        squareVertexPositionBuffer.numItems = 4;
+
+        squareVertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexColorBuffer);
+        colors = []
+        for (var i=0; i < 4; i++) {
+            colors = colors.concat([0.5, 0.5, 1.0, 1.0]);
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+        squareVertexColorBuffer.itemSize = 4;
+        squareVertexColorBuffer.numItems = 4;
+    }
+
+
+
+    var rTri = 0;
+    var rSquare = 0;
+
+    function drawScene() {
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+
+        mat4.identity(mvMatrix);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vtx);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.idx);
+        var header = mesh.desc[0];
+        var attribs = mesh.desc[1];
+        var attrib = attribs[1];
+        gl.enableVertexAttribArray(attrib.id);
+        gl.vertexAttribPointer(attrib.id, attrib.size, attrib.type, attrib.normalized, attrib.stride, attrib.offset);
+        gl.drawElements(gl.TRIANGLES, header.num_tri*3, header.gl_index_type, 0);
+        //gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
+        //gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        //gl.drawArrays(gl.POINTS, 0, header.num_vtx);
+        gl.disableVertexAttribArray(attrib.id);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+        
+        /*
+        var error = gl.getError();
+        if (error =! gl.NO_ERROR)
+          console.log(error);
+        */
+        
+        mat4.translate(mvMatrix, [-1.5, 0.0, -7.0]);
+
+        mvPushMatrix();
+        mat4.rotate(mvMatrix, degToRad(rTri), [0, 1, 0]);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, triangleVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+        setMatrixUniforms();
+        //gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
+        //gl.drawArrays(gl.POINTS, 0, 3);
+
+        gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
+        gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+        mvPopMatrix();
+
+        mat4.translate(mvMatrix, [3.0, 0.0, 0.0]);
+
+        mvPushMatrix();
+        mat4.rotate(mvMatrix, degToRad(rSquare), [1, 0, 0]);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexColorBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, squareVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+        setMatrixUniforms();
+        //gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+        //gl.drawArrays(gl.POINTS, 0, 4);
+
+        gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
+        gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+        mvPopMatrix();
+    }
+
+
+    var lastTime = 0;
+
+    function animate() {
+        var timeNow = new Date().getTime();
+        if (lastTime != 0) {
+            var elapsed = timeNow - lastTime;
+
+            rTri += (90 * elapsed) / 1000.0;
+            rSquare += (75 * elapsed) / 1000.0;
+        }
+        lastTime = timeNow;
+    }
+
+
+    function tick() {
+        requestAnimFrame(tick);
+        drawScene();
+        animate();
+    }
+
+
+    function webGLStart() {
+        var canvas = document.getElementById("lesson03-canvas");
+        initGL(canvas);
+        initShaders()
+        initBuffers();
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+
+        tick();
+    }
+
+</script>
+
+</head>
+
+
+<body onload="webGLStart();">
+    <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
+
+    <canvas id="lesson03-canvas" style="border: none;" width="500" height="500"></canvas>
+
+    <br/>
+    <a href="http://learningwebgl.com/blog/?p=239">&lt;&lt; Back to Lesson 3</a><br />
+</body>
+
+</html>
