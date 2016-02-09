@@ -33,11 +33,13 @@
 
 #include <mmsystem.h>
 #pragma comment (lib, "winmm.lib")
+#pragma comment (lib, "user32.lib")
 
 #if USE_OPENGL
 
 #include <GL/GL.h>
 #pragma comment (lib, "opengl32.lib")
+#pragma comment (lib, "gdi32.lib")
 
 HDC g_gl_hdc = NULL;
 
@@ -544,7 +546,7 @@ BOOL initDirectX(HWND hWnd)
 void modal_dialog(HWND hWnd)
 {
 #if USE_OPENGL
-      MessageBox(hWnd, TEXT("OpenGL mode\n\nThis dialog box should open in front of the main window.\n\nDoes it ? On my Win7, it does not."), TEXT("Hello"), MB_OK);
+      MessageBox(hWnd, TEXT("OpenGL mode\n\nThis dialog box should open in front of the main window.\n\nDoes it ? On my Win7, it does not.\n\nOn my Win10, it does."), TEXT("Hello"), MB_OK);
 #else
       MessageBox(hWnd, TEXT("DirectX mode\n\nThis dialog box should open in front of the main window.\n\nDoes it ? On my Win7, it does... Damn OpenGL..."), TEXT("Hello"), MB_OK);
 #endif
