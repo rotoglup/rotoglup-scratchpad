@@ -19,7 +19,7 @@
 
 #define POPUP_MODAL_ON_TIMER 0
 
-#define WORKAROUND_ATTEMPT 3
+#define WORKAROUND_ATTEMPT 4
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -546,6 +546,10 @@ BOOL initDirectX(HWND hWnd)
 void modal_dialog(HWND hWnd)
 {
 #if USE_OPENGL
+#if WORKAROUND_ATTEMPT == 4
+      // from @edschke on http://stackoverflow.com/questions/2378918/modal-dialogs-opened-by-a-fullscreen-opengl-window-on-windows-7-are-not-showing
+      RedrawWindow(hWnd, 0, 0, RDW_INTERNALPAINT);
+#endif
       MessageBox(hWnd, TEXT("OpenGL mode\n\nThis dialog box should open in front of the main window.\n\nDoes it ? On my Win7, it does not.\n\nOn my Win10, it does."), TEXT("Hello"), MB_OK);
 #else
       MessageBox(hWnd, TEXT("DirectX mode\n\nThis dialog box should open in front of the main window.\n\nDoes it ? On my Win7, it does... Damn OpenGL..."), TEXT("Hello"), MB_OK);
